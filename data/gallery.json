@@ -1,0 +1,10 @@
+[
+  { "id": "g_001", "src": "/photos/photo-1.jpg", "alt": "SKY VISALink success moment", "createdAt": "2025-01-01T00:00:00.000Z" },
+  { "id": "g_002", "src": "/photos/photo-2.jpg", "alt": "SKY VISALink team and clients", "createdAt": "2025-01-01T00:00:00.000Z" },
+  { "id": "g_003", "src": "/photos/photo-3.jpg", "alt": "SKY VISALink visa handover", "createdAt": "2025-01-01T00:00:00.000Z" },
+  { "id": "g_004", "src": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=80", "alt": "Traveller with passport", "createdAt": "2025-01-01T00:00:00.000Z" },
+  { "id": "g_005", "src": "https://images.unsplash.com/photo-1530521954074-e64f6810b32d?auto=format&fit=crop&w=1000&q=80", "alt": "Airport departures", "createdAt": "2025-01-01T00:00:00.000Z" },
+  { "id": "g_006", "src": "https://images.unsplash.com/photo-1517760444937-f6397edcbbcd?auto=format&fit=crop&w=1000&q=80", "alt": "Mountain getaway", "createdAt": "2025-01-01T00:00:00.000Z" },
+  { "id": "g_007", "src": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80", "alt": "Tropical beach", "createdAt": "2025-01-01T00:00:00.000Z" },
+  { "id": "g_008", "src": "https://images.unsplash.com/photo-1500835556837-99ac94a94552?auto=format&fit=crop&w=1000&q=80", "alt": "Holiday luggage", "createdAt": "2025-01-01T00:00:00.000Z" }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "pkg_001",
+    "image": "/photos/photo-1.jpg",
+    "destination": "Dubai, UAE",
+    "duration": "4 Days / 3 Nights",
+    "price": 65000,
+    "tag": "Bestseller",
+    "highlights": ["Desert Safari", "Burj Khalifa", "Marina Cruise"],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "pkg_002",
+    "image": "/photos/photo-2.jpg",
+    "destination": "Bali, Indonesia",
+    "duration": "5 Days / 4 Nights",
+    "price": 78000,
+    "tag": "Honeymoon",
+    "highlights": ["Ubud Villas", "Nusa Penida", "Sunset Dinner"],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "pkg_003",
+    "image": "/photos/photo-3.jpg",
+    "destination": "Kuala Lumpur, Malaysia",
+    "duration": "4 Days / 3 Nights",
+    "price": 55000,
+    "tag": "Family Friendly",
+    "highlights": ["Twin Towers", "Genting Highlands", "Batu Caves"],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "pkg_004",
+    "image": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1200&q=80",
+    "destination": "Tokyo, Japan",
+    "duration": "7 Days / 6 Nights",
+    "price": 165000,
+    "tag": "Premium",
+    "highlights": ["Shibuya", "Mt. Fuji Day Trip", "Kyoto Bullet Train"],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "pkg_005",
+    "image": "https://images.unsplash.com/photo-1538970272646-f61fabb3a8a2?auto=format&fit=crop&w=1200&q=80",
+    "destination": "Istanbul, Türkiye",
+    "duration": "5 Days / 4 Nights",
+    "price": 92000,
+    "tag": "Cultural",
+    "highlights": ["Hagia Sophia", "Bosphorus Cruise", "Cappadocia Add-on"],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "pkg_006",
+    "image": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80",
+    "destination": "Paris, France",
+    "duration": "6 Days / 5 Nights",
+    "price": 185000,
+    "tag": "Luxury",
+    "highlights": ["Eiffel Tower", "Louvre Museum", "Seine Dinner Cruise"],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  }
+]
