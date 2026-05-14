@@ -158,12 +158,12 @@ export default function Hero() {
             </motion.div>
           </div>
 
-          {/* Right floating Quick Inquiry — interactive */}
+          {/* Quick Inquiry — interactive, shown on all screens (stacks below text on mobile) */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="hidden lg:col-span-5 lg:block"
+            className="lg:col-span-5"
           >
             <QuickInquiry />
           </motion.div>
