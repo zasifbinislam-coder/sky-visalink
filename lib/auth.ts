@@ -5,18 +5,13 @@ import {
   randomBytes,
   timingSafeEqual,
 } from "node:crypto";
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { getJson, setJson } from "./storage";
 
 const COOKIE_NAME = "skv_admin";
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const SESSION_TTL_MS = 7 * ONE_DAY;
 
-const CREDENTIALS_PATH = path.join(
-  process.cwd(),
-  "data",
-  "credentials.json",
-);
+const CREDENTIALS_KEY = "credentials";
 
 // Security code required to change the admin password — Sir's policy.
 export const PASSWORD_CHANGE_SECURITY_CODE = "AllaH";
@@ -134,17 +129,25 @@ function hashPassword(
 }
 
 async function readCredentials(): Promise<StoredCredentials | null> {
-  try {
-    const raw = await fs.readFile(CREDENTIALS_PATH, "utf8");
-    return JSON.parse(raw) as StoredCredentials;
-  } catch {
-    return null;
+  const stored = await getJson<StoredCredentials | null>(
+    CREDENTIALS_KEY,
+    null,
+  );
+  // getJson returns the fallback when KV is empty and no seed file exists.
+  // Validate the returned object actually has the expected shape.
+  if (
+    stored &&
+    typeof stored === "object" &&
+    "passwordHash" in stored &&
+    "salt" in stored
+  ) {
+    return stored;
   }
+  return null;
 }
 
 async function writeCredentials(c: StoredCredentials): Promise<void> {
-  await fs.mkdir(path.dirname(CREDENTIALS_PATH), { recursive: true });
-  await fs.writeFile(CREDENTIALS_PATH, JSON.stringify(c, null, 2), "utf8");
+  await setJson(CREDENTIALS_KEY, c);
 }
 
 function constantTimeStringEquals(a: string, b: string): boolean {
@@ -227,11 +230,10 @@ export async function changePassword(
   try {
     await writeCredentials(next);
   } catch (err) {
-    // Read-only filesystem (e.g., Vercel serverless). Surface a useful message.
     return {
       ok: false,
       error:
-        "Could not save new password — this environment has a read-only filesystem. Update ADMIN_PASSWORD in your hosting dashboard env vars instead.",
+        "Could not save new password. Storage may be misconfigured — check Vercel KV / disk permissions.",
     };
   }
   return { ok: true };

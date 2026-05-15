@@ -1,9 +1,22 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import { randomBytes } from "node:crypto";
+/**
+ * Application data store.
+ *
+ * All functions go through `lib/storage.ts` which routes reads/writes to
+ * either Vercel KV + Blob (production) or the local filesystem (dev).
+ */
 
-// JSON-file backed store. Lives at the repo root in /data.
-const DATA_DIR = path.join(process.cwd(), "data");
+import {
+  deleteFileIfManaged,
+  getJson,
+  newId,
+  setJson,
+  uploadFile,
+  type UploadResult,
+} from "./storage";
+
+// ──────────────────────────────────────────────────────────────────────────
+// Types
+// ──────────────────────────────────────────────────────────────────────────
 
 export type GalleryItem = {
   id: string;
@@ -58,119 +71,6 @@ export type Inquiry = {
   createdAt: string;
 };
 
-async function readJson<T>(file: string, fallback: T): Promise<T> {
-  try {
-    const raw = await fs.readFile(path.join(DATA_DIR, file), "utf8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-async function writeJson<T>(file: string, data: T): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(
-      path.join(DATA_DIR, file),
-      JSON.stringify(data, null, 2),
-      "utf8",
-    );
-  } catch (err: unknown) {
-    // Serverless (Vercel) has a read-only filesystem outside /tmp. We
-    // intentionally swallow EROFS / EACCES so the API call still succeeds
-    // (UX continues to function via WhatsApp deep-link etc.). The change
-    // simply won't persist in this environment — admin should manage
-    // content locally and commit data/*.json to git for production.
-    const code = (err as NodeJS.ErrnoException)?.code;
-    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
-      console.warn(
-        `[store] Skipping write of ${file} — filesystem is read-only (${code}).`,
-      );
-      return;
-    }
-    throw err;
-  }
-}
-
-export function genId(prefix: string): string {
-  return `${prefix}_${randomBytes(5).toString("hex")}`;
-}
-
-// ── Gallery ───────────────────────────────────────────────────────────
-export async function listGallery(): Promise<GalleryItem[]> {
-  return readJson<GalleryItem[]>("gallery.json", []);
-}
-
-export async function addGalleryItem(
-  item: Omit<GalleryItem, "id" | "createdAt">,
-): Promise<GalleryItem> {
-  const items = await listGallery();
-  const next: GalleryItem = {
-    id: genId("g"),
-    createdAt: new Date().toISOString(),
-    ...item,
-  };
-  items.unshift(next);
-  await writeJson("gallery.json", items);
-  return next;
-}
-
-export async function deleteGalleryItem(id: string): Promise<GalleryItem | null> {
-  const items = await listGallery();
-  const idx = items.findIndex((i) => i.id === id);
-  if (idx === -1) return null;
-  const [removed] = items.splice(idx, 1);
-  await writeJson("gallery.json", items);
-  return removed;
-}
-
-// ── Packages ──────────────────────────────────────────────────────────
-export async function listPackages(): Promise<PackageItem[]> {
-  return readJson<PackageItem[]>("packages.json", []);
-}
-
-export async function getPackage(id: string): Promise<PackageItem | null> {
-  const items = await listPackages();
-  return items.find((p) => p.id === id) ?? null;
-}
-
-export async function addPackage(
-  item: Omit<PackageItem, "id" | "createdAt">,
-): Promise<PackageItem> {
-  const items = await listPackages();
-  const next: PackageItem = {
-    id: genId("pkg"),
-    createdAt: new Date().toISOString(),
-    ...item,
-  };
-  items.unshift(next);
-  await writeJson("packages.json", items);
-  return next;
-}
-
-export async function updatePackage(
-  id: string,
-  patch: Partial<Omit<PackageItem, "id" | "createdAt">>,
-): Promise<PackageItem | null> {
-  const items = await listPackages();
-  const idx = items.findIndex((p) => p.id === id);
-  if (idx === -1) return null;
-  items[idx] = { ...items[idx], ...patch };
-  await writeJson("packages.json", items);
-  return items[idx];
-}
-
-export async function deletePackage(id: string): Promise<PackageItem | null> {
-  const items = await listPackages();
-  const idx = items.findIndex((p) => p.id === id);
-  if (idx === -1) return null;
-  const [removed] = items.splice(idx, 1);
-  await writeJson("packages.json", items);
-  return removed;
-}
-
-// ── Site settings (pricing etc.) ──────────────────────────────────────
-
 export type Settings = {
   pricing: {
     regionFallback: Record<string, number>;
@@ -200,9 +100,143 @@ const DEFAULT_SETTINGS: Settings = {
   },
 };
 
+// Re-export helper used by auth.ts
+export { newId as genId };
+
+// ──────────────────────────────────────────────────────────────────────────
+// Gallery
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function listGallery(): Promise<GalleryItem[]> {
+  return getJson<GalleryItem[]>("gallery", []);
+}
+
+export async function addGalleryItem(
+  item: Omit<GalleryItem, "id" | "createdAt">,
+): Promise<GalleryItem> {
+  const items = await listGallery();
+  const next: GalleryItem = {
+    id: newId("g"),
+    createdAt: new Date().toISOString(),
+    ...item,
+  };
+  items.unshift(next);
+  await setJson("gallery", items);
+  return next;
+}
+
+export async function deleteGalleryItem(
+  id: string,
+): Promise<GalleryItem | null> {
+  const items = await listGallery();
+  const idx = items.findIndex((i) => i.id === id);
+  if (idx === -1) return null;
+  const [removed] = items.splice(idx, 1);
+  await setJson("gallery", items);
+  return removed;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Packages
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function listPackages(): Promise<PackageItem[]> {
+  return getJson<PackageItem[]>("packages", []);
+}
+
+export async function getPackage(id: string): Promise<PackageItem | null> {
+  const items = await listPackages();
+  return items.find((p) => p.id === id) ?? null;
+}
+
+export async function addPackage(
+  item: Omit<PackageItem, "id" | "createdAt">,
+): Promise<PackageItem> {
+  const items = await listPackages();
+  const next: PackageItem = {
+    id: newId("pkg"),
+    createdAt: new Date().toISOString(),
+    ...item,
+  };
+  items.unshift(next);
+  await setJson("packages", items);
+  return next;
+}
+
+export async function updatePackage(
+  id: string,
+  patch: Partial<Omit<PackageItem, "id" | "createdAt">>,
+): Promise<PackageItem | null> {
+  const items = await listPackages();
+  const idx = items.findIndex((p) => p.id === id);
+  if (idx === -1) return null;
+  items[idx] = { ...items[idx], ...patch };
+  await setJson("packages", items);
+  return items[idx];
+}
+
+export async function deletePackage(
+  id: string,
+): Promise<PackageItem | null> {
+  const items = await listPackages();
+  const idx = items.findIndex((p) => p.id === id);
+  if (idx === -1) return null;
+  const [removed] = items.splice(idx, 1);
+  await setJson("packages", items);
+  return removed;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Inquiries
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function listInquiries(): Promise<Inquiry[]> {
+  const items = await getJson<Inquiry[]>("inquiries", []);
+  return [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function addInquiry(
+  item: Omit<Inquiry, "id" | "createdAt" | "status">,
+): Promise<Inquiry> {
+  const items = await getJson<Inquiry[]>("inquiries", []);
+  const next: Inquiry = {
+    id: newId("inq"),
+    createdAt: new Date().toISOString(),
+    status: "new",
+    ...item,
+  };
+  items.unshift(next);
+  await setJson("inquiries", items);
+  return next;
+}
+
+export async function updateInquiryStatus(
+  id: string,
+  status: InquiryStatus,
+): Promise<Inquiry | null> {
+  const items = await getJson<Inquiry[]>("inquiries", []);
+  const idx = items.findIndex((i) => i.id === id);
+  if (idx === -1) return null;
+  items[idx] = { ...items[idx], status };
+  await setJson("inquiries", items);
+  return items[idx];
+}
+
+export async function deleteInquiry(id: string): Promise<Inquiry | null> {
+  const items = await getJson<Inquiry[]>("inquiries", []);
+  const idx = items.findIndex((i) => i.id === id);
+  if (idx === -1) return null;
+  const [removed] = items.splice(idx, 1);
+  await setJson("inquiries", items);
+  return removed;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Settings
+// ──────────────────────────────────────────────────────────────────────────
+
 export async function getSettings(): Promise<Settings> {
-  const raw = await readJson<Partial<Settings>>("settings.json", {});
-  // Deep-merge defaults so missing keys are filled in
+  const raw = await getJson<Partial<Settings>>("settings", {});
   return {
     pricing: {
       regionFallback: {
@@ -222,92 +256,30 @@ export async function getSettings(): Promise<Settings> {
 }
 
 export async function updateSettings(patch: Settings): Promise<Settings> {
-  // Trust caller to send a complete settings object
-  await writeJson("settings.json", patch);
+  await setJson("settings", patch);
   return patch;
 }
 
-// ── Inquiries ─────────────────────────────────────────────────────────
-export async function listInquiries(): Promise<Inquiry[]> {
-  const items = await readJson<Inquiry[]>("inquiries.json", []);
-  // Newest first
-  return [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-export async function addInquiry(
-  item: Omit<Inquiry, "id" | "createdAt" | "status">,
-): Promise<Inquiry> {
-  const items = await readJson<Inquiry[]>("inquiries.json", []);
-  const next: Inquiry = {
-    id: genId("inq"),
-    createdAt: new Date().toISOString(),
-    status: "new",
-    ...item,
-  };
-  items.unshift(next);
-  await writeJson("inquiries.json", items);
-  return next;
-}
-
-export async function updateInquiryStatus(
-  id: string,
-  status: InquiryStatus,
-): Promise<Inquiry | null> {
-  const items = await readJson<Inquiry[]>("inquiries.json", []);
-  const idx = items.findIndex((i) => i.id === id);
-  if (idx === -1) return null;
-  items[idx] = { ...items[idx], status };
-  await writeJson("inquiries.json", items);
-  return items[idx];
-}
-
-export async function deleteInquiry(id: string): Promise<Inquiry | null> {
-  const items = await readJson<Inquiry[]>("inquiries.json", []);
-  const idx = items.findIndex((i) => i.id === id);
-  if (idx === -1) return null;
-  const [removed] = items.splice(idx, 1);
-  await writeJson("inquiries.json", items);
-  return removed;
-}
-
-// ── Upload helpers ────────────────────────────────────────────────────
-const UPLOAD_BASE = path.join(process.cwd(), "public", "uploads");
+// ──────────────────────────────────────────────────────────────────────────
+// Upload helpers (re-exported with friendlier names)
+// ──────────────────────────────────────────────────────────────────────────
 
 export async function saveUpload(
   buffer: Buffer,
   originalName: string,
   subfolder: "gallery" | "packages",
+  contentType?: string,
 ): Promise<string> {
-  const dir = path.join(UPLOAD_BASE, subfolder);
-  const ext = path.extname(originalName).toLowerCase() || ".jpg";
-  const safeExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)
-    ? ext
-    : ".jpg";
-  const name = `${Date.now()}_${randomBytes(4).toString("hex")}${safeExt}`;
-  const full = path.join(dir, name);
-
-  try {
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(full, buffer);
-  } catch (err: unknown) {
-    const code = (err as NodeJS.ErrnoException)?.code;
-    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
-      throw new Error(
-        "Uploads not supported on this deployment (read-only filesystem). Add images locally and commit them to git, or migrate to cloud storage.",
-      );
-    }
-    throw err;
-  }
-  // Public URL path served by Next.js from /public
-  return `/uploads/${subfolder}/${name}`;
+  const result: UploadResult = await uploadFile(
+    buffer,
+    originalName,
+    subfolder,
+    contentType,
+  );
+  return result.url;
 }
 
 export async function deleteUploadIfLocal(publicPath: string): Promise<void> {
-  if (!publicPath.startsWith("/uploads/")) return;
-  const full = path.join(process.cwd(), "public", publicPath.replace(/^\//, ""));
-  try {
-    await fs.unlink(full);
-  } catch {
-    // Ignore if file already missing.
-  }
+  // Name kept for backward-compat; actually deletes Vercel Blob too if applicable.
+  return deleteFileIfManaged(publicPath);
 }

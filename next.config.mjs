@@ -5,6 +5,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "source.unsplash.com" },
+      // Vercel Blob — gallery / package uploads land at *.public.blob.vercel-storage.com
+      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
     ],
   },
 };
