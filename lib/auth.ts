@@ -147,40 +147,29 @@ async function writeCredentials(c: StoredCredentials): Promise<void> {
   await fs.writeFile(CREDENTIALS_PATH, JSON.stringify(c, null, 2), "utf8");
 }
 
-async function bootstrapCredentialsFromEnv(): Promise<StoredCredentials | null> {
-  const envUser = process.env.ADMIN_USERNAME ?? "admin";
-  const envPass = process.env.ADMIN_PASSWORD;
-  if (!envPass) return null;
-
-  const { hash, salt, iterations } = hashPassword(envPass);
-  const next: StoredCredentials = {
-    username: envUser,
-    passwordHash: hash,
-    salt,
-    algo: "pbkdf2-sha256",
-    iterations,
-    updatedAt: new Date().toISOString(),
-  };
-  await writeCredentials(next);
-  return next;
+function constantTimeStringEquals(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a);
+  const bBuf = Buffer.from(b);
+  if (aBuf.length !== bBuf.length) return false;
+  return timingSafeEqual(aBuf, bBuf);
 }
 
-export async function checkCredentials(
+function verifyAgainstEnv(username: string, password: string): boolean {
+  const envUser = process.env.ADMIN_USERNAME ?? "admin";
+  const envPass = process.env.ADMIN_PASSWORD;
+  if (!envPass) return false;
+  return (
+    constantTimeStringEquals(username, envUser) &&
+    constantTimeStringEquals(password, envPass)
+  );
+}
+
+function verifyAgainstStored(
   username: string,
   password: string,
-): Promise<boolean> {
-  let stored = await readCredentials();
-  if (!stored) {
-    stored = await bootstrapCredentialsFromEnv();
-    if (!stored) return false;
-  }
-
-  // Compare username (constant-time)
-  const a = Buffer.from(username);
-  const b = Buffer.from(stored.username);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
-
-  // Compare password hash
+  stored: StoredCredentials,
+): boolean {
+  if (!constantTimeStringEquals(username, stored.username)) return false;
   const computed = pbkdf2Sync(
     password,
     stored.salt,
@@ -188,8 +177,22 @@ export async function checkCredentials(
     32,
     "sha256",
   ).toString("hex");
-
   return safeEqualHex(computed, stored.passwordHash);
+}
+
+export async function checkCredentials(
+  username: string,
+  password: string,
+): Promise<boolean> {
+  // Stored credentials file is the source of truth (created when admin
+  // changes password locally). On serverless / read-only environments
+  // the file won't exist, in which case we fall back to env vars without
+  // attempting to write anything.
+  const stored = await readCredentials();
+  if (stored) {
+    return verifyAgainstStored(username, password, stored);
+  }
+  return verifyAgainstEnv(username, password);
 }
 
 export async function changePassword(
@@ -221,7 +224,16 @@ export async function changePassword(
     iterations,
     updatedAt: new Date().toISOString(),
   };
-  await writeCredentials(next);
+  try {
+    await writeCredentials(next);
+  } catch (err) {
+    // Read-only filesystem (e.g., Vercel serverless). Surface a useful message.
+    return {
+      ok: false,
+      error:
+        "Could not save new password — this environment has a read-only filesystem. Update ADMIN_PASSWORD in your hosting dashboard env vars instead.",
+    };
+  }
   return { ok: true };
 }
 

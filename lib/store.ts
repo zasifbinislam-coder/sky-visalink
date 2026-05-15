@@ -68,12 +68,28 @@ async function readJson<T>(file: string, fallback: T): Promise<T> {
 }
 
 async function writeJson<T>(file: string, data: T): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(
-    path.join(DATA_DIR, file),
-    JSON.stringify(data, null, 2),
-    "utf8",
-  );
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(
+      path.join(DATA_DIR, file),
+      JSON.stringify(data, null, 2),
+      "utf8",
+    );
+  } catch (err: unknown) {
+    // Serverless (Vercel) has a read-only filesystem outside /tmp. We
+    // intentionally swallow EROFS / EACCES so the API call still succeeds
+    // (UX continues to function via WhatsApp deep-link etc.). The change
+    // simply won't persist in this environment — admin should manage
+    // content locally and commit data/*.json to git for production.
+    const code = (err as NodeJS.ErrnoException)?.code;
+    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
+      console.warn(
+        `[store] Skipping write of ${file} — filesystem is read-only (${code}).`,
+      );
+      return;
+    }
+    throw err;
+  }
 }
 
 export function genId(prefix: string): string {
@@ -263,8 +279,6 @@ export async function saveUpload(
   subfolder: "gallery" | "packages",
 ): Promise<string> {
   const dir = path.join(UPLOAD_BASE, subfolder);
-  await fs.mkdir(dir, { recursive: true });
-
   const ext = path.extname(originalName).toLowerCase() || ".jpg";
   const safeExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)
     ? ext
@@ -272,7 +286,18 @@ export async function saveUpload(
   const name = `${Date.now()}_${randomBytes(4).toString("hex")}${safeExt}`;
   const full = path.join(dir, name);
 
-  await fs.writeFile(full, buffer);
+  try {
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(full, buffer);
+  } catch (err: unknown) {
+    const code = (err as NodeJS.ErrnoException)?.code;
+    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
+      throw new Error(
+        "Uploads not supported on this deployment (read-only filesystem). Add images locally and commit them to git, or migrate to cloud storage.",
+      );
+    }
+    throw err;
+  }
   // Public URL path served by Next.js from /public
   return `/uploads/${subfolder}/${name}`;
 }
