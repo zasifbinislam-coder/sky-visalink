@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft, GraduationCap, Palmtree, Briefcase } from "lucide-react";
+import { ArrowLeft, GraduationCap, Palmtree, Briefcase, Stamp } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -34,6 +34,7 @@ const iconMap = {
   graduation: GraduationCap,
   palm: Palmtree,
   briefcase: Briefcase,
+  stamp: Stamp,
 } as const;
 
 export default function VisaTypePage({

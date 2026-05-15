@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, FileCheck, Plane, Star, Users, Globe } from "lucide-react";
-import QuickInquiry from "./QuickInquiry";
+import QuickInquiry, { type QuickInquiryPricing } from "./QuickInquiry";
 
 const stats = [
   { value: "5K+", label: "Happy Travellers", icon: Users },
@@ -11,7 +11,11 @@ const stats = [
   { value: "50+", label: "Destinations", icon: Globe },
 ];
 
-export default function Hero() {
+export default function Hero({
+  pricing,
+}: {
+  pricing?: QuickInquiryPricing;
+} = {}) {
   return (
     <section
       id="home"
@@ -28,7 +32,7 @@ export default function Hero() {
           fill
           sizes="100vw"
           priority
-          className="object-cover scale-105 object-[20%_center] sm:object-[25%_center] lg:object-[30%_center]"
+          className="object-cover scale-105 object-[8%_center] sm:object-[12%_center] lg:object-[18%_center]"
         />
       </div>
 
@@ -165,7 +169,7 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="lg:col-span-5"
           >
-            <QuickInquiry />
+            <QuickInquiry pricing={pricing} />
           </motion.div>
         </div>
       </div>

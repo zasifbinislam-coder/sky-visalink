@@ -9,3 +9,6 @@ dist
 next-env.d.ts
 .vercel
 .turbo
+
+# Credentials file — contains password hash, never commit
+data/credentials.json

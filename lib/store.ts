@@ -23,6 +23,41 @@ export type PackageItem = {
   createdAt: string;
 };
 
+export type InquiryVisaType =
+  | "tourist"
+  | "student"
+  | "business"
+  | "work"
+  | "general";
+
+export type InquirySource =
+  | "quick-inquiry"
+  | "contact-form"
+  | "country-detail"
+  | "book-consultant";
+
+export type InquiryStatus = "new" | "in-progress" | "closed";
+
+export type Inquiry = {
+  id: string;
+  visaType: InquiryVisaType;
+  source: InquirySource;
+  status: InquiryStatus;
+  name: string;
+  email?: string;
+  phone: string;
+  country?: string;
+  countrySlug?: string;
+  passport?: string;
+  travellers?: number;
+  travelDate?: string;
+  travelClass?: string;
+  estimatePrice?: number;
+  purpose?: string;
+  message?: string;
+  createdAt: string;
+};
+
 async function readJson<T>(file: string, fallback: T): Promise<T> {
   try {
     const raw = await fs.readFile(path.join(DATA_DIR, file), "utf8");
@@ -115,6 +150,107 @@ export async function deletePackage(id: string): Promise<PackageItem | null> {
   if (idx === -1) return null;
   const [removed] = items.splice(idx, 1);
   await writeJson("packages.json", items);
+  return removed;
+}
+
+// ── Site settings (pricing etc.) ──────────────────────────────────────
+
+export type Settings = {
+  pricing: {
+    regionFallback: Record<string, number>;
+    countryBase: Record<string, number>;
+    classMultiplier: Record<string, number>;
+  };
+};
+
+const DEFAULT_SETTINGS: Settings = {
+  pricing: {
+    regionFallback: {
+      "South Asia": 45000,
+      "Southeast Asia": 55000,
+      "Middle East": 75000,
+      "East Asia": 130000,
+      Europe: 155000,
+      "North America": 185000,
+      Oceania: 165000,
+    },
+    countryBase: {},
+    classMultiplier: {
+      Economy: 1,
+      "Economy+": 1.18,
+      Business: 1.65,
+      First: 2.6,
+    },
+  },
+};
+
+export async function getSettings(): Promise<Settings> {
+  const raw = await readJson<Partial<Settings>>("settings.json", {});
+  // Deep-merge defaults so missing keys are filled in
+  return {
+    pricing: {
+      regionFallback: {
+        ...DEFAULT_SETTINGS.pricing.regionFallback,
+        ...(raw.pricing?.regionFallback ?? {}),
+      },
+      countryBase: {
+        ...DEFAULT_SETTINGS.pricing.countryBase,
+        ...(raw.pricing?.countryBase ?? {}),
+      },
+      classMultiplier: {
+        ...DEFAULT_SETTINGS.pricing.classMultiplier,
+        ...(raw.pricing?.classMultiplier ?? {}),
+      },
+    },
+  };
+}
+
+export async function updateSettings(patch: Settings): Promise<Settings> {
+  // Trust caller to send a complete settings object
+  await writeJson("settings.json", patch);
+  return patch;
+}
+
+// ── Inquiries ─────────────────────────────────────────────────────────
+export async function listInquiries(): Promise<Inquiry[]> {
+  const items = await readJson<Inquiry[]>("inquiries.json", []);
+  // Newest first
+  return [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function addInquiry(
+  item: Omit<Inquiry, "id" | "createdAt" | "status">,
+): Promise<Inquiry> {
+  const items = await readJson<Inquiry[]>("inquiries.json", []);
+  const next: Inquiry = {
+    id: genId("inq"),
+    createdAt: new Date().toISOString(),
+    status: "new",
+    ...item,
+  };
+  items.unshift(next);
+  await writeJson("inquiries.json", items);
+  return next;
+}
+
+export async function updateInquiryStatus(
+  id: string,
+  status: InquiryStatus,
+): Promise<Inquiry | null> {
+  const items = await readJson<Inquiry[]>("inquiries.json", []);
+  const idx = items.findIndex((i) => i.id === id);
+  if (idx === -1) return null;
+  items[idx] = { ...items[idx], status };
+  await writeJson("inquiries.json", items);
+  return items[idx];
+}
+
+export async function deleteInquiry(id: string): Promise<Inquiry | null> {
+  const items = await readJson<Inquiry[]>("inquiries.json", []);
+  const idx = items.findIndex((i) => i.id === id);
+  if (idx === -1) return null;
+  const [removed] = items.splice(idx, 1);
+  await writeJson("inquiries.json", items);
   return removed;
 }
 

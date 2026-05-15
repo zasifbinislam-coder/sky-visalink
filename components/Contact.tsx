@@ -1,42 +1,113 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Send, Phone, Mail, MapPin, CheckCircle2, MessageCircle } from "lucide-react";
+import {
+  Send,
+  Phone,
+  Mail,
+  MapPin,
+  CheckCircle2,
+  MessageCircle,
+  Stamp,
+} from "lucide-react";
 import { businessInfo } from "@/lib/data";
+import { countries } from "@/lib/visa/data";
+import type { Region, VisaType } from "@/lib/visa/types";
 
 type FormState = {
   name: string;
   phone: string;
-  destination: string;
+  visaType: VisaType | "general";
+  country: string; // slug or "other"
+  customDestination: string;
   message: string;
 };
 
 const initial: FormState = {
   name: "",
   phone: "",
-  destination: "",
+  visaType: "tourist",
+  country: "",
+  customDestination: "",
   message: "",
 };
+
+const VISA_TYPE_OPTIONS: { value: VisaType | "general"; label: string }[] = [
+  { value: "general", label: "Not sure yet — talk to a consultant" },
+  { value: "tourist", label: "Tourist Visa" },
+  { value: "student", label: "Student Visa" },
+  { value: "business", label: "Business Visa" },
+  { value: "work", label: "Work Permit" },
+];
+
+const REGIONS_ORDER: Region[] = [
+  "South Asia",
+  "Southeast Asia",
+  "Middle East",
+  "East Asia",
+  "Europe",
+  "North America",
+  "Oceania",
+];
 
 export default function Contact() {
   const [form, setForm] = useState<FormState>(initial);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const onChange = (k: keyof FormState) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  // Country list filtered by visa type (or all if "general")
+  const availableCountries = useMemo(() => {
+    if (form.visaType === "general") return countries;
+    return countries.filter((c) => c.visas[form.visaType as VisaType]);
+  }, [form.visaType]);
+
+  const onChange =
+    (k: keyof FormState) =>
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
+    ) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    // Compose a WhatsApp message as a graceful fallback
+
+    const visaLabel =
+      VISA_TYPE_OPTIONS.find((o) => o.value === form.visaType)?.label ?? "";
+    const selectedCountry = countries.find((c) => c.slug === form.country);
+    const destinationDisplay =
+      selectedCountry
+        ? `${selectedCountry.flag} ${selectedCountry.name}`
+        : form.customDestination || "Not specified";
+
+    // Save inquiry (best effort)
+    fetch("/api/inquiries", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        visaType: form.visaType,
+        source: "contact-form",
+        name: form.name,
+        phone: form.phone,
+        country: selectedCountry?.name ?? form.customDestination ?? undefined,
+        countrySlug: selectedCountry?.slug,
+        message: form.message,
+      }),
+    }).catch(() => {});
+
     const text = encodeURIComponent(
-      `Hi SKY VISALink,\n\nName: ${form.name}\nPhone: ${form.phone}\nDestination: ${form.destination}\n\n${form.message}`,
+      `Hi SKY VISALink,\n\n` +
+        `Name: ${form.name}\n` +
+        `Phone: ${form.phone}\n` +
+        `Visa type: ${visaLabel}\n` +
+        `Destination: ${destinationDisplay}\n\n` +
+        (form.message || "Please contact me for a consultation."),
     );
-    // Slight UX delay
-    await new Promise((r) => setTimeout(r, 600));
+
+    await new Promise((r) => setTimeout(r, 500));
     window.open(
       `https://wa.me/${businessInfo.whatsapp}?text=${text}`,
       "_blank",
@@ -180,16 +251,84 @@ export default function Contact() {
                     required
                   />
                 </div>
+
+                {/* Visa Type */}
                 <div className="mt-4">
-                  <Field
-                    label="Destination"
-                    type="text"
-                    value={form.destination}
-                    onChange={onChange("destination")}
-                    placeholder="e.g., Dubai, Bali, Schengen"
-                    required
-                  />
+                  <label className="block text-xs font-semibold uppercase tracking-widest text-navy-600">
+                    <Stamp className="mr-1 inline h-3 w-3" />
+                    Visa Type
+                  </label>
+                  <div className="relative mt-1.5">
+                    <select
+                      value={form.visaType}
+                      onChange={(e) => {
+                        setForm((f) => ({
+                          ...f,
+                          visaType: e.target.value as VisaType | "general",
+                          country: "",
+                        }));
+                      }}
+                      className="w-full appearance-none rounded-xl border border-navy-100 bg-white/80 px-4 py-3 pr-9 text-sm font-medium text-navy-900 outline-none transition-all focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                    >
+                      {VISA_TYPE_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-navy-400">
+                      ▾
+                    </span>
+                  </div>
                 </div>
+
+                {/* Country */}
+                <div className="mt-4">
+                  <label className="block text-xs font-semibold uppercase tracking-widest text-navy-600">
+                    Destination Country
+                  </label>
+                  <div className="relative mt-1.5">
+                    <select
+                      value={form.country}
+                      onChange={onChange("country")}
+                      className="w-full appearance-none rounded-xl border border-navy-100 bg-white/80 px-4 py-3 pr-9 text-sm font-medium text-navy-900 outline-none transition-all focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                    >
+                      <option value="">— Select a country —</option>
+                      {REGIONS_ORDER.map((region) => {
+                        const list = availableCountries.filter(
+                          (c) => c.region === region,
+                        );
+                        if (list.length === 0) return null;
+                        return (
+                          <optgroup key={region} label={region}>
+                            {list.map((c) => (
+                              <option key={c.slug} value={c.slug}>
+                                {c.flag} {c.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        );
+                      })}
+                      <option value="__other__">
+                        Other / Not in list…
+                      </option>
+                    </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-navy-400">
+                      ▾
+                    </span>
+                  </div>
+
+                  {form.country === "__other__" && (
+                    <input
+                      type="text"
+                      value={form.customDestination}
+                      onChange={onChange("customDestination")}
+                      placeholder="Type destination name…"
+                      className="mt-2 w-full rounded-xl border border-navy-100 bg-white/80 px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                    />
+                  )}
+                </div>
+
                 <div className="mt-4">
                   <label className="block text-xs font-semibold uppercase tracking-widest text-navy-600">
                     Message
@@ -210,7 +349,7 @@ export default function Contact() {
                 >
                   {submitting ? (
                     <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-900/30 border-t-navy-950" />
                       Sending…
                     </>
                   ) : sent ? (
@@ -226,8 +365,8 @@ export default function Contact() {
                 </button>
 
                 <p className="mt-3 text-center text-xs text-navy-500">
-                  Your inquiry will open WhatsApp with your details pre-filled —
-                  fastest way to reach us.
+                  Your inquiry is saved to our consultant inbox and a WhatsApp
+                  message opens with your details pre-filled.
                 </p>
               </form>
             </div>

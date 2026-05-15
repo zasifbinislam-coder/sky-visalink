@@ -1,4 +1,4 @@
-export type VisaType = "student" | "tourist" | "business";
+export type VisaType = "student" | "tourist" | "business" | "work";
 
 export type Region =
   | "South Asia"
@@ -60,7 +60,7 @@ export const VISA_TYPE_META: Record<
     description: string;
     accent: string;
     accentSoft: string;
-    icon: "graduation" | "palm" | "briefcase";
+    icon: "graduation" | "palm" | "briefcase" | "stamp";
   }
 > = {
   student: {
@@ -69,8 +69,8 @@ export const VISA_TYPE_META: Record<
     tagline: "Study abroad with confidence",
     description:
       "End-to-end student visa support — from university selection and SOP review to documentation, financial profile, and embassy interview prep.",
-    accent: "from-gold-500 to-navy-800",
-    accentSoft: "bg-gold-50 text-gold-800",
+    accent: "from-indigo-500 to-violet-700",
+    accentSoft: "bg-indigo-100 text-indigo-800",
     icon: "graduation",
   },
   tourist: {
@@ -79,8 +79,8 @@ export const VISA_TYPE_META: Record<
     tagline: "Explore the world hassle-free",
     description:
       "Whether it's a family holiday, honeymoon, or solo escape — we handle visa documentation, appointments, and itinerary planning for 20+ destinations.",
-    accent: "from-gold-400 to-gold-600",
-    accentSoft: "bg-gold-100 text-gold-800",
+    accent: "from-amber-400 to-orange-500",
+    accentSoft: "bg-amber-100 text-amber-800",
     icon: "palm",
   },
   business: {
@@ -89,8 +89,18 @@ export const VISA_TYPE_META: Record<
     tagline: "For meetings, conferences & trade",
     description:
       "Fast-track business visa processing for entrepreneurs, exporters, and corporate executives — with letter drafting and embassy liaison.",
-    accent: "from-navy-800 to-gold-500",
-    accentSoft: "bg-navy-50 text-navy-800",
+    accent: "from-navy-800 to-slate-900",
+    accentSoft: "bg-navy-100 text-navy-800",
     icon: "briefcase",
+  },
+  work: {
+    label: "Work Permit",
+    title: "Work Permit Services",
+    tagline: "Build your career in Europe",
+    description:
+      "Work permits and employment visas for Romania, Poland, Hungary, Malta and 8 more European destinations — with job offer verification and embassy submission.",
+    accent: "from-emerald-500 to-teal-700",
+    accentSoft: "bg-emerald-100 text-emerald-800",
+    icon: "stamp",
   },
 };

@@ -2,27 +2,33 @@ import Link from "next/link";
 import {
   Image as ImageIcon,
   Package,
+  Inbox,
   ArrowRight,
   ExternalLink,
   Sparkles,
 } from "lucide-react";
-import { listGallery, listPackages } from "@/lib/store";
+import { listGallery, listInquiries, listPackages } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [gallery, packages] = await Promise.all([
+  const [gallery, packages, inquiries] = await Promise.all([
     listGallery(),
     listPackages(),
+    listInquiries(),
   ]);
+
+  const newInquiries = inquiries.filter((i) => i.status === "new").length;
 
   const stats = [
     {
-      label: "Gallery photos",
-      value: gallery.length,
-      href: "/admin/gallery",
-      icon: ImageIcon,
-      color: "from-sky-500 to-cyan-500",
+      label: newInquiries > 0
+        ? `New inquiries (${newInquiries} unread)`
+        : "Inquiries",
+      value: inquiries.length,
+      href: "/admin/inquiries",
+      icon: Inbox,
+      color: "from-rose-500 to-orange-500",
     },
     {
       label: "Tour packages",
@@ -30,6 +36,13 @@ export default async function DashboardPage() {
       href: "/admin/packages",
       icon: Package,
       color: "from-indigo-500 to-sky-500",
+    },
+    {
+      label: "Gallery photos",
+      value: gallery.length,
+      href: "/admin/gallery",
+      icon: ImageIcon,
+      color: "from-sky-500 to-cyan-500",
     },
   ];
 
@@ -56,7 +69,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stat grid */}
-      <div className="mt-8 grid gap-5 sm:grid-cols-2">
+      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((s) => (
           <Link
             key={s.label}

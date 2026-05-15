@@ -153,6 +153,7 @@ export const navLinks = [
   { href: "/#home", label: "Home" },
   { href: "/#services", label: "Services" },
   { href: "/#packages", label: "Packages" },
+  { href: "/#about", label: "About" },
   { href: "/#gallery", label: "Gallery" },
   { href: "/#contact", label: "Contact" },
 ];

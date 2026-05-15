@@ -8,6 +8,8 @@ import {
   LayoutDashboard,
   Image as ImageIcon,
   Package,
+  Inbox,
+  Settings as SettingsIcon,
   LogOut,
   Menu,
   X,
@@ -16,8 +18,10 @@ import {
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/inquiries", label: "Inquiries", icon: Inbox },
   { href: "/admin/gallery", label: "Gallery", icon: ImageIcon },
   { href: "/admin/packages", label: "Tour Packages", icon: Package },
+  { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export default function AdminShell({

@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Palmtree,
   Briefcase,
+  Stamp,
 } from "lucide-react";
 import { navLinks } from "@/lib/data";
 import { VISA_TYPE_META } from "@/lib/visa/types";
@@ -20,6 +21,7 @@ const visaItems = [
   { type: "student" as const, icon: GraduationCap },
   { type: "tourist" as const, icon: Palmtree },
   { type: "business" as const, icon: Briefcase },
+  { type: "work" as const, icon: Stamp },
 ];
 
 export default function Navbar() {
@@ -156,7 +158,7 @@ export default function Navbar() {
         <div className="hidden lg:block">
           <Link href="/#contact" className="btn-primary group">
             <Plane className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            Book a Trip
+            Book a Consultant
           </Link>
         </div>
 
@@ -229,7 +231,7 @@ export default function Navbar() {
                       onClick={() => setOpen(false)}
                       className="btn-primary w-full"
                     >
-                      <Plane className="h-4 w-4" /> Book a Trip
+                      <Plane className="h-4 w-4" /> Book a Consultant
                     </Link>
                   </li>
                 </ul>

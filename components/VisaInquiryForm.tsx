@@ -10,6 +10,7 @@ import type { VisaType } from "@/lib/visa/types";
 type Props = {
   countryName: string;
   countryFlag: string;
+  countrySlug?: string;
   visaType: VisaType;
 };
 
@@ -36,6 +37,7 @@ const initial: FormState = {
 export default function VisaInquiryForm({
   countryName,
   countryFlag,
+  countrySlug,
   visaType,
 }: Props) {
   const [form, setForm] = useState<FormState>(initial);
@@ -56,6 +58,25 @@ export default function VisaInquiryForm({
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+
+    // Save inquiry (best-effort)
+    fetch("/api/inquiries", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        visaType,
+        source: "country-detail",
+        name: form.name,
+        email: form.email || undefined,
+        phone: form.phone,
+        country: countryName,
+        countrySlug: countrySlug,
+        travellers: Number(form.travelers) || undefined,
+        travelDate: form.travelDate || undefined,
+        purpose: form.purpose || undefined,
+        message: form.message || undefined,
+      }),
+    }).catch(() => {});
 
     const text = encodeURIComponent(
       `Hi SKY VISALink,\n\nI'd like to apply for a *${meta.label}* to *${countryName}* ${countryFlag}\n\n` +

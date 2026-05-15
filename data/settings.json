@@ -1,0 +1,20 @@
+{
+  "pricing": {
+    "regionFallback": {
+      "South Asia": 45000,
+      "Southeast Asia": 55000,
+      "Middle East": 75000,
+      "East Asia": 130000,
+      "Europe": 155000,
+      "North America": 185000,
+      "Oceania": 165000
+    },
+    "countryBase": {},
+    "classMultiplier": {
+      "Economy": 1,
+      "Economy+": 1.18,
+      "Business": 1.65,
+      "First": 2.6
+    }
+  }
+}

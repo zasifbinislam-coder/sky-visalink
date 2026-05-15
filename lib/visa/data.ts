@@ -1,4 +1,4 @@
-import type { Country, VisaRequirement, VisaType } from "./types";
+import type { Country, VisaInfo, VisaRequirement, VisaType } from "./types";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Shared requirement builders — keep country entries concise.
@@ -205,6 +205,87 @@ const conferenceLetter: VisaRequirement = {
     "Confirmation letter or registration for the conference, exhibition, or training programme (if applicable).",
   required: false,
 };
+
+// ──────────────────────────────────────────────────────────────────────────
+// Work permit visa builder — most EU countries share the same checklist
+// with small fee / salary / processing-time differences.
+// ──────────────────────────────────────────────────────────────────────────
+
+function workVisa(opts: {
+  country: string;
+  processingTime: string;
+  feeRange: string;
+  salary: string;
+}): VisaInfo {
+  return {
+    processingTime: opts.processingTime,
+    validity: "1–2 years (renewable, leads to residence permit)",
+    stayDuration: "Course of employment contract",
+    entryType: "Single (residence permit issued on arrival)",
+    feeRange: opts.feeRange,
+    requirements: [
+      passport(12),
+      photos("Two recent 35×45 mm biometric photos, white background."),
+      applicationForm,
+      coverLetter,
+      {
+        category: "business",
+        title: "Job Offer / Employment Contract",
+        description: `Notarised job offer or signed employment contract from a registered ${opts.country} employer, stating role, salary, duration and accommodation.`,
+        required: true,
+      },
+      {
+        category: "business",
+        title: `Employer's ${opts.country} Work Permit Approval`,
+        description: `Approval letter issued by the relevant ${opts.country} labour / immigration authority to the employer, authorising hiring of a foreign worker.`,
+        required: true,
+      },
+      {
+        category: "business",
+        title: "Employer Business Registration",
+        description:
+          "Copy of employer's company registration certificate, tax ID and trade licence.",
+        required: true,
+      },
+      academicDocs,
+      {
+        category: "academic",
+        title: "Professional CV + Experience Letters",
+        description:
+          "Updated CV plus reference / experience letters from previous employers, certified where possible.",
+        required: true,
+      },
+      {
+        category: "academic",
+        title: "Professional / Skill Qualification",
+        description:
+          "Trade certificates, language proficiency (English / local language), or skill assessment relevant to the role.",
+        required: false,
+      },
+      medicalCert,
+      policeClearance,
+      insurance("Health insurance valid in destination country"),
+      bankStatements(6),
+      {
+        category: "financial",
+        title: "Salary Benchmark Proof",
+        description: `Employer must offer at least the local minimum: ${opts.salary}.`,
+        required: true,
+      },
+    ],
+    eligibility: [
+      `Valid job offer from a ${opts.country}-registered employer sponsoring the work permit.`,
+      "Relevant qualifications and / or work experience for the role.",
+      "Clean medical and police records.",
+      "Employer must first secure local labour-market approval before applicant can apply for the visa.",
+    ],
+    notes: [
+      `Two-stage process: employer applies for work-permit approval inside ${opts.country} first, then applicant applies for the entry visa at the embassy.`,
+      "On arrival, registration with local immigration / residence office required within 30–90 days.",
+      "Family reunification visas usually possible after 6–12 months of legal employment.",
+    ],
+  };
+}
 
 // ──────────────────────────────────────────────────────────────────────────
 // Country dataset (22 destinations)
@@ -2228,6 +2309,657 @@ export const countries: Country[] = [
       },
     },
   },
+
+  // ── NEW TOURIST DESTINATIONS — SOUTH ASIA ─────────────────────────────
+  {
+    slug: "nepal",
+    name: "Nepal",
+    flag: "🇳🇵",
+    region: "South Asia",
+    image:
+      "https://images.unsplash.com/photo-1605640840605-14ac1855827b?auto=format&fit=crop&w=1200&q=80",
+    capital: "Kathmandu",
+    currency: "NPR (रू)",
+    shortDescription:
+      "Himalayan peaks, Buddhist temples, Annapurna trails, Pokhara lakes — the rooftop of the world.",
+    popularFor: ["Trekking", "Pilgrimage", "Adventure", "Honeymoon"],
+    visas: {
+      tourist: {
+        processingTime: "Visa on Arrival / 3–5 working days (online)",
+        validity: "15 / 30 / 90 days",
+        stayDuration: "15 / 30 / 90 days",
+        entryType: "Multiple",
+        feeRange: "USD 30 / 50 / 125 (BDT ~3,500 – 14,000)",
+        successRate: "Very High",
+        requirements: [
+          passport(),
+          photos("Two recent 4×6 cm photos, white background."),
+          applicationForm,
+          bankStatements(3),
+          flightBooking,
+          hotelBooking,
+        ],
+        eligibility: [
+          "Visa on Arrival available at Kathmandu (TIA) airport for Bangladeshi nationals.",
+          "Tourism, family visit, trekking, or pilgrimage.",
+        ],
+        notes: [
+          "Online pre-application at nepaliport.immigration.gov.np speeds up arrival.",
+          "Trekking permits (TIMS / Annapurna / Everest) separately required.",
+        ],
+      },
+    },
+  },
+  {
+    slug: "maldives",
+    name: "Maldives",
+    flag: "🇲🇻",
+    region: "South Asia",
+    image:
+      "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1200&q=80",
+    capital: "Malé",
+    currency: "MVR (Rf)",
+    shortDescription:
+      "Overwater villas, turquoise lagoons, coral reefs — paradise on 1,200 islands.",
+    popularFor: ["Honeymoon", "Beaches", "Diving", "Luxury"],
+    visas: {
+      tourist: {
+        processingTime: "Free Visa on Arrival",
+        validity: "30 days",
+        stayDuration: "30 days (extendable to 90)",
+        entryType: "Single / Multiple",
+        feeRange: "Free on arrival (resort cost separate)",
+        successRate: "Very High",
+        requirements: [
+          passport(),
+          photos("One recent passport photo (often not required for VOA)."),
+          flightBooking,
+          hotelBooking,
+          { ...bankSolvency, description: "Proof of sufficient funds (~USD 100/day) or pre-paid resort booking." },
+        ],
+        eligibility: [
+          "Free 30-day tourist visa issued on arrival for all nationalities including Bangladesh.",
+          "Confirmed resort / hotel booking and return ticket.",
+        ],
+        notes: [
+          "Most international visitors fly into Velana International Airport (MLE).",
+          "Resort transfers (seaplane / speedboat) booked through resort.",
+        ],
+      },
+    },
+  },
+  {
+    slug: "sri-lanka",
+    name: "Sri Lanka",
+    flag: "🇱🇰",
+    region: "South Asia",
+    image:
+      "https://images.unsplash.com/photo-1586437594286-2b7eda6df3ef?auto=format&fit=crop&w=1200&q=80",
+    capital: "Colombo",
+    currency: "LKR (රු)",
+    shortDescription:
+      "Tea hills, Sigiriya rock fortress, southern beaches, ancient temples — the pearl of the Indian Ocean.",
+    popularFor: ["Beaches", "Culture", "Wildlife", "Honeymoon"],
+    visas: {
+      tourist: {
+        processingTime: "1–3 working days (ETA online)",
+        validity: "6 months from issue",
+        stayDuration: "30 days (extendable to 90)",
+        entryType: "Double",
+        feeRange: "USD 50 (~BDT 5,500)",
+        successRate: "Very High",
+        requirements: [
+          passport(),
+          photos(),
+          applicationForm,
+          bankStatements(3),
+          flightBooking,
+          hotelBooking,
+        ],
+        eligibility: [
+          "Apply online via eta.gov.lk for Electronic Travel Authorization.",
+          "Tourism, family visit, or short personal trip.",
+        ],
+        notes: [
+          "ETA approval usually within 24 hours.",
+          "Extension up to 90 days possible at Department of Immigration Colombo.",
+        ],
+      },
+    },
+  },
+
+  // ── NEW TOURIST DESTINATIONS — SOUTHEAST ASIA ─────────────────────────
+  {
+    slug: "philippines",
+    name: "Philippines",
+    flag: "🇵🇭",
+    region: "Southeast Asia",
+    image:
+      "https://images.unsplash.com/photo-1518509562904-e7ef99cddc85?auto=format&fit=crop&w=1200&q=80",
+    capital: "Manila",
+    currency: "PHP (₱)",
+    shortDescription:
+      "Palawan islands, Boracay beaches, Chocolate Hills, 7,641 islands of tropical wonder.",
+    popularFor: ["Beaches", "Diving", "Honeymoon", "Adventure"],
+    visas: {
+      tourist: {
+        processingTime: "5–10 working days",
+        validity: "3 months from issue",
+        stayDuration: "30 days (extendable to 59)",
+        entryType: "Single / Multiple",
+        feeRange: "BDT 4,500 – 9,500",
+        successRate: "High",
+        requirements: [
+          passport(),
+          photos("Two 4.5×4.5 cm photos, white background."),
+          applicationForm,
+          coverLetter,
+          bankStatements(6),
+          employmentNOC,
+          flightBooking,
+          hotelBooking,
+          itinerary,
+        ],
+        eligibility: [
+          "Tourism, family visit, or short business trip.",
+          "Confirmed return ticket and sufficient funds.",
+        ],
+        notes: [
+          "Apply at Philippine Embassy Dhaka or accredited travel agency.",
+        ],
+      },
+    },
+  },
+  {
+    slug: "laos",
+    name: "Laos",
+    flag: "🇱🇦",
+    region: "Southeast Asia",
+    image:
+      "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=1200&q=80",
+    capital: "Vientiane",
+    currency: "LAK (₭)",
+    shortDescription:
+      "Mekong sunsets, Luang Prabang monks, hidden caves, slow-travel paradise of Southeast Asia.",
+    popularFor: ["Culture", "Adventure", "Spirituality", "Slow Travel"],
+    visas: {
+      tourist: {
+        processingTime: "Visa on Arrival / 3–5 working days (e-Visa)",
+        validity: "60 days from issue",
+        stayDuration: "30 days",
+        entryType: "Single",
+        feeRange: "USD 30 – 45 (~BDT 3,500 – 5,500)",
+        successRate: "Very High",
+        requirements: [
+          passport(),
+          photos("Two 4×6 cm photos."),
+          applicationForm,
+          flightBooking,
+          hotelBooking,
+        ],
+        eligibility: [
+          "Visa on Arrival at Wattay International Airport (Vientiane) and major land borders.",
+          "Tourism only.",
+        ],
+        notes: [
+          "e-Visa at laoevisa.gov.la — faster than VOA.",
+        ],
+      },
+    },
+  },
+
+  // ── NEW TOURIST DESTINATIONS — MIDDLE EAST ────────────────────────────
+  {
+    slug: "bahrain",
+    name: "Bahrain",
+    flag: "🇧🇭",
+    region: "Middle East",
+    image:
+      "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=1200&q=80",
+    capital: "Manama",
+    currency: "BHD (.د.ب)",
+    shortDescription:
+      "F1 Grand Prix, ancient Dilmun ruins, modern Manama skyline, pearl-diving heritage.",
+    popularFor: ["Sports", "Business", "Culture", "Shopping"],
+    visas: {
+      tourist: {
+        processingTime: "3–5 working days (e-Visa)",
+        validity: "30 days / 1 year (Multiple)",
+        stayDuration: "14 / 30 days per visit",
+        entryType: "Single / Multiple",
+        feeRange: "BDT 4,500 – 12,000",
+        successRate: "High",
+        requirements: [
+          passport(),
+          photos(),
+          applicationForm,
+          bankStatements(3),
+          flightBooking,
+          hotelBooking,
+        ],
+        eligibility: [
+          "Apply via Bahrain eVisa portal (evisa.gov.bh).",
+          "Tourism, family visit, business.",
+        ],
+        notes: [
+          "Visa-on-Arrival possible for travellers with valid US / UK / Schengen visa.",
+        ],
+      },
+    },
+  },
+  {
+    slug: "oman",
+    name: "Oman",
+    flag: "🇴🇲",
+    region: "Middle East",
+    image:
+      "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?auto=format&fit=crop&w=1200&q=80",
+    capital: "Muscat",
+    currency: "OMR (ر.ع.)",
+    shortDescription:
+      "Wadis, fjords of Musandam, frankincense souks, Bedouin desert nights — Arabia's hidden gem.",
+    popularFor: ["Nature", "Adventure", "Culture", "Family"],
+    visas: {
+      tourist: {
+        processingTime: "3–5 working days (e-Visa)",
+        validity: "30 days",
+        stayDuration: "10 / 30 days",
+        entryType: "Single",
+        feeRange: "OMR 5 – 20 (~BDT 1,500 – 6,000)",
+        successRate: "High",
+        requirements: [
+          passport(),
+          photos(),
+          applicationForm,
+          bankStatements(3),
+          flightBooking,
+          hotelBooking,
+          insurance("OMR 10,000 / USD 25,000 minimum"),
+        ],
+        eligibility: [
+          "Apply via Oman Royal Police e-Visa portal (evisa.rop.gov.om).",
+          "Tourism only.",
+        ],
+        notes: [
+          "Free transit visa available for layovers under 96 hours on Oman Air.",
+        ],
+      },
+    },
+  },
+
+  // ── NEW TOURIST DESTINATIONS — EUROPE ─────────────────────────────────
+  {
+    slug: "switzerland",
+    name: "Switzerland",
+    flag: "🇨🇭",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=1200&q=80",
+    capital: "Bern",
+    currency: "CHF (₣)",
+    shortDescription:
+      "Alpine peaks, Lake Geneva, Zermatt skiing, Swiss watches, postcard villages.",
+    popularFor: ["Honeymoon", "Luxury", "Adventure", "Nature"],
+    visas: {
+      tourist: {
+        processingTime: "15 working days (Schengen)",
+        validity: "Up to 90 days within 180-day period",
+        stayDuration: "Maximum 90 days",
+        entryType: "Single / Multiple",
+        feeRange: "BDT 12,000 – 15,000 (€90)",
+        successRate: "Moderate",
+        requirements: [
+          passport(),
+          photos("35×45 mm biometric photo, white background."),
+          applicationForm,
+          coverLetter,
+          bankStatements(6),
+          {
+            ...bankSolvency,
+            description:
+              "Approximately CHF 100/day of stay (one of the highest in Schengen).",
+          },
+          employmentNOC,
+          flightBooking,
+          hotelBooking,
+          itinerary,
+          insurance("Schengen-compliant: €30,000 medical cover"),
+        ],
+        eligibility: [
+          "Genuine tourist intent with strong ties to home country.",
+          "Sufficient funds (Switzerland is expensive — embassy expects higher amounts).",
+        ],
+        notes: [
+          "Apply via TLScontact Switzerland in Dhaka.",
+          "Schengen rules apply — Switzerland is part of Schengen Area despite not being in the EU.",
+        ],
+      },
+    },
+  },
+  {
+    slug: "spain",
+    name: "Spain",
+    flag: "🇪🇸",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=1200&q=80",
+    capital: "Madrid",
+    currency: "EUR (€)",
+    shortDescription:
+      "Barcelona's Gaudí, Andalusian flamenco, Costa del Sol beaches, tapas and siestas.",
+    popularFor: ["Honeymoon", "Beaches", "Culture", "Food"],
+    visas: {
+      tourist: {
+        processingTime: "15 working days (Schengen)",
+        validity: "Up to 90 days within 180-day period",
+        stayDuration: "Maximum 90 days",
+        entryType: "Single / Multiple",
+        feeRange: "BDT 12,000 – 15,000 (€90)",
+        successRate: "Moderate to High",
+        requirements: [
+          passport(),
+          photos("35×45 mm biometric photo, white background."),
+          applicationForm,
+          coverLetter,
+          bankStatements(6),
+          {
+            ...bankSolvency,
+            description: "Approximately €100/day of stay.",
+          },
+          employmentNOC,
+          flightBooking,
+          hotelBooking,
+          itinerary,
+          insurance("Schengen-compliant: €30,000 medical cover"),
+        ],
+        eligibility: [
+          "Genuine tourist intent with confirmed itinerary.",
+          "Sufficient funds and proof of return.",
+        ],
+        notes: [
+          "Apply via BLS Spain visa application centre in Dhaka.",
+          "Spain is among the easier Schengen approvals for first-time Bangladeshi travellers.",
+        ],
+      },
+    },
+  },
+
+  // ── WORK PERMIT — EUROPEAN DESTINATIONS ───────────────────────────────
+  {
+    slug: "poland",
+    name: "Poland",
+    flag: "🇵🇱",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1607427293702-036933bbf746?auto=format&fit=crop&w=1200&q=80",
+    capital: "Warsaw",
+    currency: "PLN (zł)",
+    shortDescription:
+      "Kraków old town, Warsaw rebirth, Tatra mountains — and one of Europe's fastest-growing economies.",
+    popularFor: ["Work", "Tourism", "Study", "Culture"],
+    visas: {
+      tourist: {
+        processingTime: "15 working days (Schengen)",
+        validity: "Up to 90 days within 180-day period",
+        stayDuration: "Maximum 90 days",
+        entryType: "Single / Multiple",
+        feeRange: "BDT 12,000 – 15,000 (€90)",
+        successRate: "Moderate",
+        requirements: [
+          passport(),
+          photos("35×45 mm biometric photo, white background."),
+          applicationForm,
+          coverLetter,
+          bankStatements(6),
+          { ...bankSolvency, description: "Approximately €50/day of stay." },
+          employmentNOC,
+          flightBooking,
+          hotelBooking,
+          itinerary,
+          insurance("Schengen-compliant: €30,000 medical cover"),
+        ],
+        eligibility: ["Genuine tourist intent, confirmed return."],
+        notes: ["Apply via VFS Global Poland in Dhaka."],
+      },
+      work: workVisa({
+        country: "Poland",
+        processingTime: "8–14 weeks (after employer permit approval)",
+        feeRange: "PLN 440 – 800 (~BDT 12,000 – 22,000) + employer permit fee",
+        salary: "PLN 4,300+/month (minimum wage benchmark)",
+      }),
+    },
+  },
+  {
+    slug: "romania",
+    name: "Romania",
+    flag: "🇷🇴",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1556610961-2fecc5927173?auto=format&fit=crop&w=1200&q=80",
+    capital: "Bucharest",
+    currency: "RON (lei)",
+    shortDescription:
+      "Transylvania castles, Carpathian forests, Black Sea coast — gateway to EU employment.",
+    popularFor: ["Work", "Tech Jobs", "Culture", "Adventure"],
+    visas: {
+      work: workVisa({
+        country: "Romania",
+        processingTime: "10–16 weeks (after employer permit approval)",
+        feeRange: "EUR 120 – 200 (~BDT 14,000 – 24,000) + employer permit fee",
+        salary: "RON 3,300+/month (minimum gross)",
+      }),
+    },
+  },
+  {
+    slug: "hungary",
+    name: "Hungary",
+    flag: "🇭🇺",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1565426873118-a17ed65d74cd?auto=format&fit=crop&w=1200&q=80",
+    capital: "Budapest",
+    currency: "HUF (Ft)",
+    shortDescription:
+      "Budapest's twin cities, thermal baths, Danube cruises — Central Europe's gem.",
+    popularFor: ["Work", "Manufacturing", "Tourism", "Culture"],
+    visas: {
+      work: workVisa({
+        country: "Hungary",
+        processingTime: "8–12 weeks",
+        feeRange: "EUR 110 – 160 (~BDT 13,000 – 19,000)",
+        salary: "HUF 232,000+/month (minimum gross)",
+      }),
+    },
+  },
+  {
+    slug: "croatia",
+    name: "Croatia",
+    flag: "🇭🇷",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1555990538-32ee6b65f0e5?auto=format&fit=crop&w=1200&q=80",
+    capital: "Zagreb",
+    currency: "EUR (€)",
+    shortDescription:
+      "Dubrovnik walls, Adriatic islands, Plitvice waterfalls — newest Schengen + Eurozone member.",
+    popularFor: ["Work", "Tourism", "Hospitality", "Sea"],
+    visas: {
+      work: workVisa({
+        country: "Croatia",
+        processingTime: "10–14 weeks",
+        feeRange: "EUR 100 – 180 (~BDT 12,000 – 22,000)",
+        salary: "EUR 700+/month (minimum)",
+      }),
+    },
+  },
+  {
+    slug: "lithuania",
+    name: "Lithuania",
+    flag: "🇱🇹",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1564618858063-cdfb89cca067?auto=format&fit=crop&w=1200&q=80",
+    capital: "Vilnius",
+    currency: "EUR (€)",
+    shortDescription:
+      "Baltic charm, Vilnius old town, fintech-friendly economy, growing tech sector.",
+    popularFor: ["Work", "Tech Jobs", "IT", "Culture"],
+    visas: {
+      work: workVisa({
+        country: "Lithuania",
+        processingTime: "10–14 weeks",
+        feeRange: "EUR 120 – 200 (~BDT 14,000 – 24,000)",
+        salary: "EUR 924+/month (minimum gross)",
+      }),
+    },
+  },
+  {
+    slug: "malta",
+    name: "Malta",
+    flag: "🇲🇹",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1602002418082-a4443e081dd1?auto=format&fit=crop&w=1200&q=80",
+    capital: "Valletta",
+    currency: "EUR (€)",
+    shortDescription:
+      "Mediterranean island, English-speaking workforce, iGaming + finance hub — perfect EU starter.",
+    popularFor: ["Work", "Finance", "iGaming", "Beaches"],
+    visas: {
+      work: workVisa({
+        country: "Malta",
+        processingTime: "10–16 weeks",
+        feeRange: "EUR 280 – 380 (~BDT 33,000 – 46,000)",
+        salary: "EUR 925+/month (minimum)",
+      }),
+    },
+  },
+  {
+    slug: "greece",
+    name: "Greece",
+    flag: "🇬🇷",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=80",
+    capital: "Athens",
+    currency: "EUR (€)",
+    shortDescription:
+      "Santorini sunsets, Acropolis, island-hopping, hospitality jobs galore.",
+    popularFor: ["Work", "Hospitality", "Tourism", "Beaches"],
+    visas: {
+      work: workVisa({
+        country: "Greece",
+        processingTime: "12–16 weeks",
+        feeRange: "EUR 150 – 250 (~BDT 18,000 – 30,000)",
+        salary: "EUR 830+/month (minimum gross)",
+      }),
+    },
+  },
+  {
+    slug: "portugal",
+    name: "Portugal",
+    flag: "🇵🇹",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=1200&q=80",
+    capital: "Lisbon",
+    currency: "EUR (€)",
+    shortDescription:
+      "Lisbon trams, Porto wines, Algarve coast, tech-friendly residence pathways.",
+    popularFor: ["Work", "Tech Jobs", "Residency Path", "Lifestyle"],
+    visas: {
+      work: workVisa({
+        country: "Portugal",
+        processingTime: "10–16 weeks",
+        feeRange: "EUR 90 – 200 (~BDT 11,000 – 24,000)",
+        salary: "EUR 820+/month (minimum gross)",
+      }),
+    },
+  },
+  {
+    slug: "cyprus",
+    name: "Cyprus",
+    flag: "🇨🇾",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1610016302534-6f67f1c968d8?auto=format&fit=crop&w=1200&q=80",
+    capital: "Nicosia",
+    currency: "EUR (€)",
+    shortDescription:
+      "Mediterranean island nation, English-friendly, finance & tourism employment — sunny EU base.",
+    popularFor: ["Work", "Tourism", "Finance", "Beaches"],
+    visas: {
+      work: workVisa({
+        country: "Cyprus",
+        processingTime: "10–14 weeks",
+        feeRange: "EUR 80 – 180 (~BDT 10,000 – 22,000)",
+        salary: "EUR 870+/month (minimum)",
+      }),
+    },
+  },
+  {
+    slug: "czech-republic",
+    name: "Czech Republic",
+    flag: "🇨🇿",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1592906209472-a36b1f3782ef?auto=format&fit=crop&w=1200&q=80",
+    capital: "Prague",
+    currency: "CZK (Kč)",
+    shortDescription:
+      "Prague's spires, Bohemia castles, strong manufacturing base + growing tech scene.",
+    popularFor: ["Work", "Manufacturing", "Tech Jobs", "Culture"],
+    visas: {
+      work: workVisa({
+        country: "Czech Republic",
+        processingTime: "10–14 weeks",
+        feeRange: "CZK 5,000 – 7,500 (~BDT 25,000 – 38,000)",
+        salary: "CZK 18,900+/month (minimum)",
+      }),
+    },
+  },
+  {
+    slug: "slovakia",
+    name: "Slovakia",
+    flag: "🇸🇰",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1581433803509-5d6e2cd1d35a?auto=format&fit=crop&w=1200&q=80",
+    capital: "Bratislava",
+    currency: "EUR (€)",
+    shortDescription:
+      "Bratislava castle, Tatra peaks, auto-manufacturing hub of Central Europe.",
+    popularFor: ["Work", "Manufacturing", "Auto Industry", "Adventure"],
+    visas: {
+      work: workVisa({
+        country: "Slovakia",
+        processingTime: "10–14 weeks",
+        feeRange: "EUR 165 – 240 (~BDT 20,000 – 29,000)",
+        salary: "EUR 750+/month (minimum)",
+      }),
+    },
+  },
+  {
+    slug: "serbia",
+    name: "Serbia",
+    flag: "🇷🇸",
+    region: "Europe",
+    image:
+      "https://images.unsplash.com/photo-1555990538-32ee6b65f0e5?auto=format&fit=crop&w=1200&q=80",
+    capital: "Belgrade",
+    currency: "RSD (дин.)",
+    shortDescription:
+      "Belgrade nightlife, Balkan hospitality, fast-growing construction & IT employment.",
+    popularFor: ["Work", "Construction", "IT", "Culture"],
+    visas: {
+      work: workVisa({
+        country: "Serbia",
+        processingTime: "8–12 weeks (Non-EU, faster than EU permits)",
+        feeRange: "EUR 60 – 150 (~BDT 7,500 – 18,000)",
+        salary: "RSD 47,000+/month (minimum)",
+      }),
+    },
+  },
 ];
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -2256,7 +2988,7 @@ export function getCountry(slug: string): Country | undefined {
   return countries.find((c) => c.slug === slug);
 }
 
-export const VISA_TYPES: VisaType[] = ["student", "tourist", "business"];
+export const VISA_TYPES: VisaType[] = ["student", "tourist", "business", "work"];
 
 export function isValidVisaType(s: string): s is VisaType {
   return (VISA_TYPES as string[]).includes(s);

@@ -24,7 +24,8 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!checkCredentials(username, password)) {
+  const ok = await checkCredentials(username, password);
+  if (!ok) {
     // Small delay to slow naive brute-forcing
     await new Promise((r) => setTimeout(r, 400));
     return NextResponse.json(

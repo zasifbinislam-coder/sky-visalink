@@ -1,9 +1,25 @@
 import { cookies } from "next/headers";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import {
+  createHmac,
+  pbkdf2Sync,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
 const COOKIE_NAME = "skv_admin";
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const SESSION_TTL_MS = 7 * ONE_DAY;
+
+const CREDENTIALS_PATH = path.join(
+  process.cwd(),
+  "data",
+  "credentials.json",
+);
+
+// Security code required to change the admin password — Sir's policy.
+export const PASSWORD_CHANGE_SECURITY_CODE = "AllaH";
 
 function secret(): string {
   const s = process.env.AUTH_SECRET;
@@ -30,7 +46,8 @@ function safeEqualHex(a: string, b: string): boolean {
   }
 }
 
-// Build a token of shape: base64(username):base64(expiryMs).signature
+// ── Token / session ────────────────────────────────────────────────────
+
 export function issueToken(username: string): string {
   const expiry = Date.now() + SESSION_TTL_MS;
   const payload = `${Buffer.from(username).toString("base64url")}:${expiry}`;
@@ -66,7 +83,6 @@ export function verifyToken(
   };
 }
 
-// ── Server helpers (Node runtime) ───────────────────────────────────
 export function setSessionCookie(token: string) {
   cookies().set(COOKIE_NAME, token, {
     httpOnly: true,
@@ -94,23 +110,119 @@ export function getCurrentAdmin(): { username: string } | null {
   return { username: verified.username };
 }
 
-export function checkCredentials(
+// ── Password hashing (PBKDF2-SHA256) ───────────────────────────────────
+
+type StoredCredentials = {
+  username: string;
+  passwordHash: string;
+  salt: string;
+  algo: "pbkdf2-sha256";
+  iterations: number;
+  updatedAt: string;
+};
+
+function hashPassword(
+  password: string,
+  salt?: string,
+  iterations = 100_000,
+): { hash: string; salt: string; iterations: number } {
+  const s = salt ?? randomBytes(16).toString("hex");
+  const hash = pbkdf2Sync(password, s, iterations, 32, "sha256").toString(
+    "hex",
+  );
+  return { hash, salt: s, iterations };
+}
+
+async function readCredentials(): Promise<StoredCredentials | null> {
+  try {
+    const raw = await fs.readFile(CREDENTIALS_PATH, "utf8");
+    return JSON.parse(raw) as StoredCredentials;
+  } catch {
+    return null;
+  }
+}
+
+async function writeCredentials(c: StoredCredentials): Promise<void> {
+  await fs.mkdir(path.dirname(CREDENTIALS_PATH), { recursive: true });
+  await fs.writeFile(CREDENTIALS_PATH, JSON.stringify(c, null, 2), "utf8");
+}
+
+async function bootstrapCredentialsFromEnv(): Promise<StoredCredentials | null> {
+  const envUser = process.env.ADMIN_USERNAME ?? "admin";
+  const envPass = process.env.ADMIN_PASSWORD;
+  if (!envPass) return null;
+
+  const { hash, salt, iterations } = hashPassword(envPass);
+  const next: StoredCredentials = {
+    username: envUser,
+    passwordHash: hash,
+    salt,
+    algo: "pbkdf2-sha256",
+    iterations,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeCredentials(next);
+  return next;
+}
+
+export async function checkCredentials(
   username: string,
   password: string,
-): boolean {
-  const expectedUser = process.env.ADMIN_USERNAME ?? "admin";
-  const expectedPass = process.env.ADMIN_PASSWORD;
-  if (!expectedPass) return false;
+): Promise<boolean> {
+  let stored = await readCredentials();
+  if (!stored) {
+    stored = await bootstrapCredentialsFromEnv();
+    if (!stored) return false;
+  }
 
-  // Constant-time compare on both
-  const userOK =
-    Buffer.from(username).length === Buffer.from(expectedUser).length &&
-    timingSafeEqual(Buffer.from(username), Buffer.from(expectedUser));
-  const passOK =
-    Buffer.from(password).length === Buffer.from(expectedPass).length &&
-    timingSafeEqual(Buffer.from(password), Buffer.from(expectedPass));
+  // Compare username (constant-time)
+  const a = Buffer.from(username);
+  const b = Buffer.from(stored.username);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
 
-  return userOK && passOK;
+  // Compare password hash
+  const computed = pbkdf2Sync(
+    password,
+    stored.salt,
+    stored.iterations,
+    32,
+    "sha256",
+  ).toString("hex");
+
+  return safeEqualHex(computed, stored.passwordHash);
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  securityCode: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (securityCode !== PASSWORD_CHANGE_SECURITY_CODE) {
+    return { ok: false, error: "Invalid security code" };
+  }
+  if (!newPassword || newPassword.length < 6) {
+    return { ok: false, error: "New password must be at least 6 characters" };
+  }
+
+  const admin = getCurrentAdmin();
+  if (!admin) return { ok: false, error: "Not authenticated" };
+
+  // Verify current password
+  const ok = await checkCredentials(admin.username, currentPassword);
+  if (!ok) return { ok: false, error: "Current password is incorrect" };
+
+  // Save new password
+  const { hash, salt, iterations } = hashPassword(newPassword);
+  const next: StoredCredentials = {
+    username: admin.username,
+    passwordHash: hash,
+    salt,
+    algo: "pbkdf2-sha256",
+    iterations,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeCredentials(next);
+  return { ok: true };
 }
 
 export const SESSION_COOKIE_NAME = COOKIE_NAME;

@@ -6,6 +6,7 @@ import {
   GraduationCap,
   Palmtree,
   Briefcase,
+  Stamp,
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
@@ -16,10 +17,11 @@ const iconMap = {
   graduation: GraduationCap,
   palm: Palmtree,
   briefcase: Briefcase,
+  stamp: Stamp,
 } as const;
 
 const cardCopy: Record<
-  "student" | "tourist" | "business",
+  "student" | "tourist" | "business" | "work",
   { points: string[]; cta: string }
 > = {
   student: {
@@ -46,10 +48,18 @@ const cardCopy: Record<
     ],
     cta: "View Business Destinations",
   },
+  work: {
+    points: [
+      "Job offer & employer verification",
+      "Document attestation & translation",
+      "End-to-end embassy submission",
+    ],
+    cta: "View Work Permit Destinations",
+  },
 };
 
 export default function VisaCategories() {
-  const types = ["student", "tourist", "business"] as const;
+  const types = ["student", "tourist", "business", "work"] as const;
 
   return (
     <section
@@ -94,7 +104,7 @@ export default function VisaCategories() {
           </motion.p>
         </div>
 
-        <div className="mt-14 grid gap-6 lg:grid-cols-3">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {types.map((type, i) => {
             const meta = VISA_TYPE_META[type];
             const Icon = iconMap[meta.icon];

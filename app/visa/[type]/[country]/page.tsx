@@ -284,6 +284,7 @@ export default function CountryVisaPage({
                 <VisaInquiryForm
                   countryName={country.name}
                   countryFlag={country.flag}
+                  countrySlug={country.slug}
                   visaType={params.type}
                 />
               </div>
