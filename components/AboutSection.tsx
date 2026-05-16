@@ -170,7 +170,7 @@ export default function AboutSection() {
               transition={{ duration: 0.5, delay: 0.5 }}
               className="btn-primary mt-10 group inline-flex"
             >
-              Book a Consultant
+              Book an Appointment
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </motion.a>
           </div>
