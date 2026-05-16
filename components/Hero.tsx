@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, FileCheck, Plane, Star, Users, Globe } from "lucide-react";
-import QuickInquiry, { type QuickInquiryPricing } from "./QuickInquiry";
+import HeroProcessCard from "./HeroProcessCard";
 
 const stats = [
   { value: "5K+", label: "Happy Travellers", icon: Users },
@@ -11,11 +11,7 @@ const stats = [
   { value: "50+", label: "Destinations", icon: Globe },
 ];
 
-export default function Hero({
-  pricing,
-}: {
-  pricing?: QuickInquiryPricing;
-} = {}) {
+export default function Hero() {
   return (
     <section
       id="home"
@@ -162,14 +158,14 @@ export default function Hero({
             </motion.div>
           </div>
 
-          {/* Quick Inquiry — interactive, shown on all screens (stacks below text on mobile) */}
+          {/* How It Works — 3-step process card, stacks below text on mobile */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
             className="lg:col-span-5"
           >
-            <QuickInquiry pricing={pricing} />
+            <HeroProcessCard />
           </motion.div>
         </div>
       </div>

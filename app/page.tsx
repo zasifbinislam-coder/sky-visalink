@@ -9,16 +9,14 @@ import Gallery from "@/components/Gallery";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import { getSettings } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const settings = await getSettings();
+export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-white">
       <Navbar />
-      <Hero pricing={settings.pricing} />
+      <Hero />
       <Services />
       <VisaCategories />
       <Packages />
