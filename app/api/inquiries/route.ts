@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { addInquiry, type InquirySource, type InquiryVisaType } from "@/lib/store";
+import { sendEmail, inquiryAdminEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
+
+const ADMIN_EMAIL = process.env.INQUIRY_ADMIN_EMAIL || "zasifbinislam@gmail.com";
 
 const VALID_TYPES: InquiryVisaType[] = [
   "tourist",
@@ -79,6 +82,28 @@ export async function POST(req: Request) {
     purpose: body.purpose ? String(body.purpose).trim() : undefined,
     message: body.message ? String(body.message).trim() : undefined,
   });
+
+  // Fire-and-forget admin notification. Never block the customer's success
+  // response on SMTP — the inquiry is safely persisted regardless.
+  sendEmail({
+    to: ADMIN_EMAIL,
+    subject: `🆕 ${visaType} inquiry · ${name} · ${phone}`,
+    html: inquiryAdminEmail({
+      id: item.id,
+      name,
+      phone,
+      email: item.email ?? null,
+      visaType,
+      source,
+      country: item.country ?? null,
+      passport: item.passport ?? null,
+      travellers: item.travellers ?? null,
+      travelDate: item.travelDate ?? null,
+      travelClass: item.travelClass ?? null,
+      purpose: item.purpose ?? null,
+      message: item.message ?? null,
+    }),
+  }).catch((err) => console.error("[/api/inquiries] email:", err));
 
   return NextResponse.json({ ok: true, id: item.id }, { status: 201 });
 }
